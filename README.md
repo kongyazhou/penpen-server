@@ -20,6 +20,17 @@ PenPen服务器端采用Webscketd框架，程序用Python语言开发。
 关于Websocketd以及相关学习资料，稍后将整理至Documentation的HybridApp中。
 ```
 
+## 服务器端设计
+
+包含以下几个守护线程：
+
+1. 监听用户在线状态(客户端发心跳)类似看门狗
+2. 接收对话文本消息
+3. 接受注册信息
+4. 拆包
+
+系统设计见百度脑图。
+
 ## 开发环境
 
 ```
@@ -30,7 +41,7 @@ PenPen服务器端采用Webscketd框架，程序用Python语言开发。
 
 - **python**
 
-使用版本:3.5.1
+使用版本:3.4.4(由于Mysql connector的限制，最新只能使用3.4版本)
 
 查询命令:python -V (注意是大薇)
 
@@ -46,6 +57,12 @@ PenPen服务器端采用Webscketd框架，程序用Python语言开发。
 
 查询命令:go version
 
+- **mysql**
+
+使用版本:????
+
+查询命令:????
+
 #### 开发环境搭建步骤
 
 - 下载并安装[Python3](https://www.python.org/)
@@ -60,7 +77,7 @@ PenPen服务器端采用Webscketd框架，程序用Python语言开发。
 ## 运行环境(稍后补充)
 
 ```
-服务器的环境是操作系统CentOS 6.5内核版本Linux 2.6.32
+服务器的环境是操作系统CentOS 6.5内核版本Linux 2.6.32 x86机构64位系统
 ```
 
 #### 运行环境搭建步骤
@@ -76,6 +93,11 @@ PenPen服务器端采用Webscketd框架，程序用Python语言开发。
 
 执行websocketd --port=端口号 python 程序名.py
 
+
+## 测试优化
+
+[LINUX下查看CPU使用率的命令](http://www.cnblogs.com/Wen-Man/archive/2011/04/04/2373771.html)
+
 ## 相关网站
 
 Python官网：[https://www.python.org/](https://www.python.org/)
@@ -83,3 +105,7 @@ Python官网：[https://www.python.org/](https://www.python.org/)
 Websocketd官网：[http://websocketd.com/](http://websocketd.com/)
 
 Go官网：[http://www.golang.org/](http://www.golang.org/)
+
+[廖雪峰Python3教程](http://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000)
+
+[初步理解Python进程的信号通讯](http://www.jb51.net/article/63787.htm)
