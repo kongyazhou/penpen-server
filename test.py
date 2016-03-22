@@ -1,7 +1,5 @@
-import os
-import signal
-import sys
+a="qqqqqwwwwweeeeerrrrrtttttyyyyyuuuuuiiiiioooooppppp"
 
-print(sys.getdefaultencoding())
+print(a[:20])
 
 

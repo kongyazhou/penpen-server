@@ -1,4 +1,5 @@
 import base64
 
-a=base64.b64decode(input())
+
+a=base64.standard_b64decode(input())
 print(a)
