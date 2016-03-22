@@ -16,7 +16,6 @@ class handleMessage(object):
   """
   def __init__(self,handleType=66):
     self.type=handleType
-    self.msg=msg
     if self.type==0:
       self.getMsg()
     elif self.type==1:
@@ -45,7 +44,7 @@ class handleMessage(object):
     if self.msg["head"]==1100:
       self.msg=self.msg["body"]
     elif self.msg["head"]==1110:
-      self.msg=base64.b64decode(self.msg["body"])
+      self.msg=eval(str(base64.b64decode(self.msg["body"]), encoding = "utf-8"))  
     else:
       #TODO
       pass
@@ -88,12 +87,12 @@ class handleMessage(object):
     self.cur.execute(stmt_select)
     readID=[]
     for row in cur.fetchall():
-      self.msg={"from":row[0]:,"to":row[1],"time":row[2],"type":row[3],"content":row[4]}
-      read.append(((self.user),row[5]))
+      self.msg={"from":row[0],"to":row[1],"time":row[2],"type":row[3],"content":row[4]}
+      readID.append(((self.user),row[5]))
       self.sendMsg()
     #将未读状态改成已读
     stmt_update = "UPDATE %s SET unread=0 WHERE id=%s"
-    cur.executemany(stmt_update, tuple(readID))
+    self.cur.executemany(stmt_update, tuple(readID))
     cnx.commit()
     slef.closeMysqlCur()
   def recvMsg(self):
@@ -102,29 +101,30 @@ class handleMessage(object):
     self.getTarPID()
     if self.PID:
       self.writeMsg()
-      os.kill(int(self.PID), signal.SIGCHLD)
+      os.kill(self.PID, signal.SIGCHLD)
     else:
       self.pushMsg()
   def writeMsg(self):
     """Write the message to target's unread table"""
     self.openMysqlCur()
     stmt_insert = "INSERT INTO %s (from, to, time, type, content, unread) VALUES (%s, %s, %s, %s, %s, %s)" % (self.user,self.msg["from"],self.msg["to"],self.msg["time"],self.msg["type"],self.msg["content"],1)
-    cur.execute(stmt_insert)
+    self.cur.execute(stmt_insert)
     self.closeMysqlCur()
   def getTarPID(self):
     """Get the PID of target from OnlineState database.""" 
     self.openMysqlCur()
     stmt_select = "SELECT online FROM user WHERE user=%s" % (self.msg["to"],)
-    cur.execute(stmt_select)
+    self.cur.execute(stmt_select)
     self.tarPID = cur.fetchone()[0]
     self.closeMysqlCur()    
   def pushMsg(self):
     #TODO
     pass
   def login(self):
-    self.getMsg()
+    self.getMsg()  
     self.user=self.msg["user"]
-    if slef.checkPassword():
+    if self.checkPassword():
+      #print("Login Success.")
       pass 
     else:
       #TODO
@@ -132,13 +132,19 @@ class handleMessage(object):
       return
     self.openMysqlCur()
     stmt_update = "UPDATE user SET online=%d WHERE user=%s" % (os.getpid(),self.user)
-    cur.execute(stmt_update)
+    self.cur.execute(stmt_update)
     self.closeMysqlCur()
   def checkPassword(self):
     #TODO
     return 1
   def updateProfile(self):
+    #TODO
+    pass
+  def logout(self):
+    #TODO
     pass
 
 if __name__ == '__main__':
   print("Message handler!")
+
+
