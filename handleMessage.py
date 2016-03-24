@@ -3,6 +3,7 @@ import mysql.connector
 import json
 import os
 import base64
+import time
 
 class handleMessage(object):
   """
@@ -98,16 +99,18 @@ class handleMessage(object):
   def recvMsg(self):
     """First get the message, then write it into Mysql."""
     self.getMsg()
-    self.getTarPID()
-    if self.PID:
-      self.writeMsg()
-      os.kill(self.PID, signal.SIGCHLD)
-    else:
-      self.pushMsg()
+    #self.getTarPID()
+    #if self.PID:
+    self.writeMsg()
+      #os.kill(self.PID, signal.SIGCHLD)
+    #else:
+      #self.pushMsg()
   def writeMsg(self):
     """Write the message to target's unread table"""
     self.openMysqlCur()
-    stmt_insert = "INSERT INTO %s (from, to, time, type, content, unread) VALUES (%s, %s, %s, %s, %s, %s)" % (self.user,self.msg["from"],self.msg["to"],self.msg["time"],self.msg["type"],self.msg["content"],1)
+    self.getLocalTime()
+    stmt_insert = "INSERT INTO `%s`( `from`, `to`, `time`, `type`, `content`, `unread`)\
+     VALUES(%s, %s, '%s', %s, '%s', %d)" % (self.msg["to"],self.msg["from"],self.msg["to"],self.time,self.msg["type"],self.msg["content"],1)
     self.cur.execute(stmt_insert)
     self.closeMysqlCur()
   def getTarPID(self):
@@ -143,8 +146,9 @@ class handleMessage(object):
   def logout(self):
     #TODO
     pass
+  def getLocalTime(self):
+    self.time = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(time.time()))
 
 if __name__ == '__main__':
-  print("Message handler!")
-
+  a=handleMessage(1)
 
