@@ -1,4 +1,6 @@
 #!/usr/bin/env python3.4
+import jpush as jpush
+from conf import app_key, master_secret
 import mysql.connector
 import json
 import os
@@ -99,12 +101,13 @@ class handleMessage(object):
   def recvMsg(self):
     """First get the message, then write it into Mysql."""
     self.getMsg()
-    #self.getTarPID()
-    #if self.PID:
+    self.getTarPID()
     self.writeMsg()
-      #os.kill(self.PID, signal.SIGCHLD)
-    #else:
-      #self.pushMsg()
+    if self.tarPID:
+      #TOTEST
+      os.kill(self.PID, signal.SIGCHLD)
+    else:
+      self.pushMsg()
   def writeMsg(self):
     """Write the message to target's unread table"""
     self.openMysqlCur()
@@ -118,28 +121,36 @@ class handleMessage(object):
     self.openMysqlCur()
     stmt_select = "SELECT online FROM user WHERE user=%s" % (self.msg["to"],)
     self.cur.execute(stmt_select)
-    self.tarPID = cur.fetchone()[0]
+    self.tarPID = self.cur.fetchone()[0]
     self.closeMysqlCur()    
   def pushMsg(self):
-    #TODO
+    self.createPush()
+    self.push.audience = jpush.audience(jpush.alias("penpen"+self.msg["to"]))
+    self.push.notification = jpush.notification(alert=str(base64.b64decode(self.msg["content"]), encoding = "utf-8"))
+    self.push.platform = jpush.all_
+    self.push.send()
     pass
   def login(self):
     self.getMsg()  
     self.user=self.msg["user"]
     if self.checkPassword():
-      #print("Login Success.")
+      print("Login Success.")
       pass 
     else:
       #TODO
-      print("Login failed.")
+      print("Login failed."+self.msg["password"])
       return
     self.openMysqlCur()
     stmt_update = "UPDATE user SET online=%d WHERE user=%s" % (os.getpid(),self.user)
     self.cur.execute(stmt_update)
     self.closeMysqlCur()
   def checkPassword(self):
-    #TODO
-    return 1
+    self.openMysqlCur()
+    stmt_select = "SELECT password FROM user WHERE user=%s" % (self.msg["user"],)
+    self.cur.execute(stmt_select)
+    self.password = self.cur.fetchone()[0]
+    self.closeMysqlCur()  
+    return self.msg["password"]==self.password
   def updateProfile(self):
     #TODO
     pass
@@ -148,7 +159,10 @@ class handleMessage(object):
     pass
   def getLocalTime(self):
     self.time = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(time.time()))
+  def createPush(self):
+    _jpush = jpush.JPush(app_key, master_secret)
+    self.push = _jpush.create_push()
 
 if __name__ == '__main__':
-  a=handleMessage(1)
+  a=handleMessage(4)
 
