@@ -1,16 +1,14 @@
 #!/usr/bin/env python3.4
-
 import signal
 import time
-
-from handleMessage import handleMessage
+import sys
 
 def sendMsg(a,b):
-  msgHandler(2)
-  exit()
+  time.sleep(3)
+  print('Hi,2V~')
+  sys.exit(0)
 
 if __name__ == '__main__':
-  msgHandler=handleMessage(4)
   signal.signal(signal.SIGCHLD, sendMsg)
   while 1:
     time.sleep(3600)
