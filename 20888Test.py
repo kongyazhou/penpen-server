@@ -138,20 +138,24 @@ class handleMessage(object):
       self.loginSuccess()
       pass 
     else:
-      #TODO
-      print("Login failed."+self.msg["password"])
+      self.loginFailed()
       return
     self.openMysqlCur()
     stmt_update = "UPDATE user SET online=%d WHERE user=%s" % (os.getpid(),self.user)
     self.cur.execute(stmt_update)
     self.closeMysqlCur()
   def checkPassword(self):
-    self.openMysqlCur()
-    stmt_select = "SELECT password FROM user WHERE user=%s" % (self.msg["user"],)
-    self.cur.execute(stmt_select)
-    self.password = self.cur.fetchone()[0]
-    self.closeMysqlCur()  
-    return self.msg["password"]==self.password
+    try:
+      self.openMysqlCur()
+      stmt_select = "SELECT password FROM user WHERE user=%s" % (self.msg["user"],)
+      self.cur.execute(stmt_select)    
+      self.password = self.cur.fetchone()[0]
+    except:
+      return False
+    else:
+      return self.msg["password"]==self.password
+    finally:    
+      self.closeMysqlCur()     
   def updateProfile(self):
     #TODO
     pass
@@ -165,6 +169,9 @@ class handleMessage(object):
     self.push = _jpush.create_push()
   def loginSuccess(self):
     self.msg=b'{"state":11}'
+    self.sendMsg()
+  def loginFailed(self):
+    self.msg=b'{"state":12}'
     self.sendMsg()
 
 if __name__ == '__main__':
