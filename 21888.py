@@ -3,6 +3,6 @@
 from handleMessage import handleMessage
 
 if __name__ == '__main__':
-    msgHandler=handleMessage(1)
+  msgHandler=handleMessage(1)
     
 

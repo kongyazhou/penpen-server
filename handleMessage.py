@@ -82,7 +82,7 @@ class handleMessage(object):
   def codeMsg(self):
     #将msg编码
     self.codeID=1110
-    self.msg={"head":self.codeID,"body":base64.b64encode(self.msg),"tail":"PENPEN 1.0"}
+    self.msg={"head":self.codeID,"body":str(base64.b64encode(self.msg),encoding="utf-8"),"tail":"PENPEN 1.0"}
   def readMsg(self):
     """Read message from host's unread table"""
     self.openMysqlCur()
@@ -107,7 +107,8 @@ class handleMessage(object):
       #TOTEST
       os.kill(self.PID, signal.SIGCHLD)
     else:
-      self.pushMsg()
+      #self.pushMsg()
+      pass
   def writeMsg(self):
     """Write the message to target's unread table"""
     self.openMysqlCur()
@@ -134,23 +135,27 @@ class handleMessage(object):
     self.getMsg()  
     self.user=self.msg["user"]
     if self.checkPassword():
-      print("Login Success.")
+      self.loginSuccess()
       pass 
     else:
-      #TODO
-      print("Login failed."+self.msg["password"])
+      self.loginFailed()
       return
     self.openMysqlCur()
     stmt_update = "UPDATE user SET online=%d WHERE user=%s" % (os.getpid(),self.user)
     self.cur.execute(stmt_update)
     self.closeMysqlCur()
   def checkPassword(self):
-    self.openMysqlCur()
-    stmt_select = "SELECT password FROM user WHERE user=%s" % (self.msg["user"],)
-    self.cur.execute(stmt_select)
-    self.password = self.cur.fetchone()[0]
-    self.closeMysqlCur()  
-    return self.msg["password"]==self.password
+    try:
+      self.openMysqlCur()
+      stmt_select = "SELECT password FROM user WHERE user=%s" % (self.msg["user"],)
+      self.cur.execute(stmt_select)    
+      self.password = self.cur.fetchone()[0]
+    except:
+      return False
+    else:
+      return self.msg["password"]==self.password
+    finally:    
+      self.closeMysqlCur()     
   def updateProfile(self):
     #TODO
     pass
@@ -162,6 +167,12 @@ class handleMessage(object):
   def createPush(self):
     _jpush = jpush.JPush(app_key, master_secret)
     self.push = _jpush.create_push()
+  def loginSuccess(self):
+    self.msg=b'{"state":11}'
+    self.sendMsg()
+  def loginFailed(self):
+    self.msg=b'{"state":12}'
+    self.sendMsg()
 
 if __name__ == '__main__':
   a=handleMessage(4)

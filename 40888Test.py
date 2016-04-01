@@ -6,6 +6,7 @@ import json
 import os
 import base64
 import time
+import signal
 
 class handleMessage(object):
   """
@@ -14,7 +15,8 @@ class handleMessage(object):
         1 recvMessage
         2 readMessage
         3 updateProfile
-        4 login#getMsgThenWriteToUsrState
+        4 login
+        5 setUser
         other error
   """
   def __init__(self,handleType=66):
@@ -29,6 +31,8 @@ class handleMessage(object):
       self.updateProfile()
     elif self.type==4:
       self.login()
+    elif self.type==5:
+      self.setUser()
     else:
       pass
   def __call__(self,handleType=66):
@@ -82,22 +86,24 @@ class handleMessage(object):
   def codeMsg(self):
     #将msg编码
     self.codeID=1110
-    self.msg={"head":self.codeID,"body":str(base64.b64encode(self.msg),encoding="utf-8"),"tail":"PENPEN 1.0"}
+    self.msg={"head":self.codeID,"body":str(base64.b64encode(bytes(self.msg,encoding = "utf-8")),encoding="utf-8"),"tail":"PENPEN 1.0"}
   def readMsg(self):
     """Read message from host's unread table"""
     self.openMysqlCur()
-    stmt_select = "SELECT from, to, time, type, content, id FROM %s WHERE unread==1 ORDER BY id" % tuple(self.user)
+    #TODO sql语句是否正确，参考121行，建议每句都单独测试一下
+    stmt_select = "SELECT `from`, `to`, `time`, `type`, `content`, `id` FROM `%s` WHERE unread=1 ORDER BY id" % (self.user,)
     self.cur.execute(stmt_select)
     readID=[]
-    for row in cur.fetchall():
-      self.msg={"from":row[0],"to":row[1],"time":row[2],"type":row[3],"content":row[4]}
-      readID.append(((self.user),row[5]))
+    for row in self.cur.fetchall():
+      #TODO 如果值为字符串，一定要带引号
+      self.msg='{"from":%s,"to":%s,"time":%s,"type":%s,"content":"%s"}' % (row[0],row[1],row[2],row[3],row[4])
+      readID.append((self.user,row[5]))
       self.sendMsg()
     #将未读状态改成已读
-    stmt_update = "UPDATE %s SET unread=0 WHERE id=%s"
+    stmt_update = "UPDATE `%s` SET unread=0 WHERE id=%s"
     self.cur.executemany(stmt_update, tuple(readID))
-    cnx.commit()
-    slef.closeMysqlCur()
+    self.cnx.commit()
+    self.closeMysqlCur()
   def recvMsg(self):
     """First get the message, then write it into Mysql."""
     self.getMsg()
@@ -141,6 +147,7 @@ class handleMessage(object):
       self.loginFailed()
       return
     self.openMysqlCur()
+    #TODO 不应放在此处
     stmt_update = "UPDATE user SET online=%d WHERE user=%s" % (os.getpid(),self.user)
     self.cur.execute(stmt_update)
     self.closeMysqlCur()
@@ -168,11 +175,23 @@ class handleMessage(object):
     _jpush = jpush.JPush(app_key, master_secret)
     self.push = _jpush.create_push()
   def loginSuccess(self):
-    self.msg=b'{"state":11}'
+    self.msg='{"state":11}'
     self.sendMsg()
   def loginFailed(self):
-    self.msg=b'{"state":12}'
+    self.msg='{"state":12}'
     self.sendMsg()
+  def setUser(self):
+    #TODO TEST
+    self.getMsg()
+    self.user=self.msg["user"]
+
+def pp(a,b):
+  k(2)
+  exit()
 
 if __name__ == '__main__':
-  a=handleMessage(4)
+  #TODO TEST
+  k=handleMessage(5)
+  signal.signal(signal.SIGCHLD, pp)
+  while 1:
+    time.sleep(3600)
