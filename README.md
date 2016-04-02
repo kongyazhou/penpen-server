@@ -73,6 +73,13 @@ PenPen服务器端采用Webscketd框架，程序用Python语言开发。
 - 配系统环境变量，添上Websocketd的路径
 - 在cmd下分别尝试查询上述软件版本，能显示即可
 
+#### 开发工具
+
+**sublime python插件**
+
+[SublimeREPL](https://github.com/wuub/SublimeREPL)：运行调试Python程序
+
+[Anaconda](https://github.com/DamnWidget/anaconda)：格式对齐，拼写检查，自动补充，提示等
 
 ## 运行环境(稍后补充)
 
