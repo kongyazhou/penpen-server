@@ -79,6 +79,14 @@ PenPen服务器端采用Webscketd框架，程序用Python语言开发。
 
 [SublimeREPL](https://github.com/wuub/SublimeREPL)：运行调试Python程序
 
+本机快捷键配置如下:
+
+- ctrl+f5 运行当前python文件
+- ctrl+f6 pdb调试当前python文件
+- ctrl+f7 打开iPython命令行
+
+更多配置快捷键方法，以及调试使用说明，请访问百度以及Github。
+
 [Anaconda](https://github.com/DamnWidget/anaconda)：格式对齐，拼写检查，自动补充，提示等
 
 ## 运行环境(稍后补充)

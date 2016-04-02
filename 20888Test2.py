@@ -1,12 +1,14 @@
 #!/usr/bin/env python3.4
-import jpush as jpush
-from conf import app_key, master_secret
+# import jpush as jpush
+# from conf import app_key, master_secret
 import mysql.connector
 import json
 import os
 import base64
 import time
 import signal
+from sys import stdout
+from sys import stdin
 
 
 class handleMessage(object):
@@ -37,6 +39,8 @@ class handleMessage(object):
             self.login()
         elif self.type == 5:
             self.setUser()
+        elif self.type == 6:
+            self.getUser()
         else:
             pass
 
@@ -44,8 +48,10 @@ class handleMessage(object):
         self.__init__(handleType)
 
     def getMsg(self):
-        jsonMsg = input()
-        # 将json转换成python对象
+        # TODO should be stdin
+        # jsonMsg = input()
+        jsonMsg = stdin.readline()
+        # transmit json to python object
         self.msg = json.loads(jsonMsg)
         if self.checkVersion():
             pass
@@ -58,8 +64,7 @@ class handleMessage(object):
         if self.msg["head"] == 1100:
             self.msg = self.msg["body"]
         elif self.msg["head"] == 1110:
-            self.msg = eval(str(base64.b64decode(self.msg["body"]),
-                                encoding="utf-8"))
+            self.msg = eval(str(base64.b64decode(self.msg["body"]),encoding="utf-8"))
         else:
             # TODO
             pass
@@ -75,7 +80,7 @@ class handleMessage(object):
         pass
 
     def openMysqlCur(self):
-        # 创建Mysql cursor
+        # create Mysql cursor
         self.config = {
             'host': 'localhost',
             'port': 3306,
@@ -96,30 +101,25 @@ class handleMessage(object):
     def sendMsg(self):
         self.codeMsg()
         print(self.msg)
+        stdout.flush()
 
     def codeMsg(self):
-        # 将msg编码
+        # code msg
         self.codeID = 1110
-        self.msg = {"head": self.codeID,
-                    "body": str(base64.b64encode(
-                        bytes(self.msg, encoding="utf-8")), encoding="utf-8"),
-                    "tail": "PENPEN 1.0"}
+        self.msg = {"head": self.codeID,"body": str(base64.b64encode(bytes(self.msg, encoding="utf-8")), encoding="utf-8"),"tail": "PENPEN 1.0"}
 
     def readMsg(self):
         """Read message from host's unread table"""
         self.openMysqlCur()
-        # TODO sql语句是否正确，参考121行，建议每句都单独测试一下
-        stmt_select = "SELECT `from`, `to`, `time`, `type`, `content`, `id`"
-        " FROM `%s` WHERE unread=1 ORDER BY id" % (self.user,)
+        stmt_select = "SELECT `from`, `to`, `time`, `type`, `content`, `id` FROM `%s` WHERE unread=1 ORDER BY id" % (self.user,)
         self.cur.execute(stmt_select)
         readID = []
         for row in self.cur.fetchall():
-            # TODO 如果值为字符串，一定要带引号
-            self.msg = '{"from":%s,"to":%s,"time":%s,"type":%s,"content":"%s"}' % (
-                row[0], row[1], row[2], row[3], row[4])
-            readID.append((self.user, row[5]))
+            # TODO If string, take""
+            self.msg = '{"from":%s,"to":%s,"time":"%s","type":%d,"content":"%s"}' % (row[0], row[1], row[2], row[3], row[4])
+            readID.append((int(self.user), row[5]))
             self.sendMsg()
-        # 将未读状态改成已读
+        # Change unread state to 0
         stmt_update = "UPDATE `%s` SET unread=0 WHERE id=%s"
         self.cur.executemany(stmt_update, tuple(readID))
         self.cnx.commit()
@@ -142,17 +142,14 @@ class handleMessage(object):
         self.openMysqlCur()
         self.getLocalTime()
         stmt_insert = "INSERT INTO `%s`( `from`, `to`, `time`, `type`, `content`, `unread`)\
-            VALUES(%s, %s, '%s', %s, '%s', %d)" % (
-                self.msg["to"], self.msg["from"], self.msg["to"],
-                self.time, self.msg["type"], self.msg["content"], 1)
+            VALUES(%s, %s, '%s', %s, '%s', %d)" % (self.msg["to"],self.msg["from"],self.msg["to"],self.time,self.msg["type"],self.msg["content"], 1)
         self.cur.execute(stmt_insert)
         self.closeMysqlCur()
 
     def getTarPID(self):
         """Get the PID of target from OnlineState database."""
         self.openMysqlCur()
-        stmt_select = "SELECT online FROM user WHERE user=%s" % (
-            self.msg["to"],)
+        stmt_select = "SELECT online FROM user WHERE user=%s" % (self.msg["to"],)
         self.cur.execute(stmt_select)
         self.tarPID = self.cur.fetchone()[0]
         self.closeMysqlCur()
@@ -174,7 +171,6 @@ class handleMessage(object):
             self.loginFailed()
             return
         self.openMysqlCur()
-        # TODO 不应放在此处
         stmt_update = "UPDATE user SET online=%d WHERE user=%s" % (os.getpid(), self.user)
         self.cur.execute(stmt_update)
         self.closeMysqlCur()
@@ -203,9 +199,9 @@ class handleMessage(object):
     def getLocalTime(self):
         self.time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
 
-    def createPush(self):
-        _jpush = jpush.JPush(app_key, master_secret)
-        self.push = _jpush.create_push()
+    # def createPush(self):
+    #     _jpush = jpush.JPush(app_key, master_secret)
+    #     self.push = _jpush.create_push()
 
     def loginSuccess(self):
         self.msg = '{"state":11}'
@@ -215,19 +211,12 @@ class handleMessage(object):
         self.msg = '{"state":12}'
         self.sendMsg()
 
-    def setUser(self):
-        # TODO TEST
-        self.getMsg()
-        self.user = self.msg["user"]
 
-
-def pp(a, b):
-    k(2)
-    exit()
+def onMessage(a, b):
+    hm(2)
 
 if __name__ == '__main__':
-    # TODO TEST
-    k = handleMessage(5)
-    signal.signal(signal.SIGCHLD, pp)
+    signal.signal(signal.SIGCHLD, onMessage)
+    hm = handleMessage(4)
     while 1:
         time.sleep(3600)

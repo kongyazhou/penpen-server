@@ -2,22 +2,24 @@
 # import signal
 import time
 import sys
-# import base64
+import base64
 
 
 def sendMsg(a, b):
     time.sleep(3)
     # msgBody = '{"from":%s,"to":%s,"time":%s,"type":%s,"content":"%s"}' % ("123", "123", "123", "123", "Hello~")
-    msg = {"head": 1110,
-           "body":
-           'encoding="utf-8"',
-           "tail":
-           "PENPEN 1.0"
-           }
-    # print(str(base64.b64encode(bytes(msgBody, encoding="utf-8")),encoding="utf-8"))
-    print(str(1, encoding="utf-8"))
+    msgBody = '{"user":"152"}'
+    # {"tail":"PENPEN 1.0","head":1110,"body":"eyJ1c2VyIjoiMTUyIn0="}
+    msg = {
+        "head": 1110,
+        "body": str(base64.b64encode(bytes(msgBody, encoding="utf-8")), encoding="utf-8"),
+        "tail": "PENPEN 1.0"
+    }
+    # 啊啊啊
+    print(str(base64.b64encode(bytes(msgBody, encoding="utf-8")), encoding="utf-8"))
+    # print(str(1, encoding="utf-8"))
     # print(bytes(msgBody))
-    print(msg)
+    print(repr(msg))
     sys.exit(0)
 
 if __name__ == '__main__':
