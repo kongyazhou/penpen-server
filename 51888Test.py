@@ -17,11 +17,12 @@ class handleMessage(object):
     This module provides all kinds of ways to handle message.
     type:
         0 getMessage
-        1 recvMessage
-        2 readMessage
+        21888   recvMessage
+        60888 readMessage
         3 updateProfile
-        4 login
-        5 setUser
+        20888   login
+        33888   updateState
+        51888   syncContacts
         other error
     """
 
@@ -29,18 +30,18 @@ class handleMessage(object):
         self.type = handleType
         if self.type == 0:
             self.getMsg()
-        elif self.type == 1:
+        elif self.type == 21888:
             self.recvMsg()
-        elif self.type == 2:
+        elif self.type == 60888:
             self.readMsg()
         elif self.type == 3:
             self.updateProfile()
-        elif self.type == 4:
+        elif self.type == 20888:
             self.login()
-        elif self.type == 5:
-            self.setUser()
-        elif self.type == 6:
-            self.getUser()
+        elif self.type == 33888:
+            self.updateState()
+        elif self.type == 51888:
+            self.syncContacts()
         else:
             pass
 
@@ -64,7 +65,7 @@ class handleMessage(object):
         if self.msg["head"] == 1100:
             self.msg = self.msg["body"]
         elif self.msg["head"] == 1110:
-            self.msg = eval(str(base64.b64decode(self.msg["body"]),encoding="utf-8"))
+            self.msg = eval(str(base64.b64decode(self.msg["body"]), encoding="utf-8"))
         else:
             # TODO
             pass
@@ -106,7 +107,7 @@ class handleMessage(object):
     def codeMsg(self):
         # code msg
         self.codeID = 1110
-        self.msg = {"head": self.codeID,"body": str(base64.b64encode(bytes(self.msg, encoding="utf-8")), encoding="utf-8"),"tail": "PENPEN 1.0"}
+        self.msg = {"head": self.codeID, "body": str(base64.b64encode(bytes(self.msg, encoding="utf-8")), encoding="utf-8"), "tail": "PENPEN 1.0"}
 
     def readMsg(self):
         """Read message from host's unread table"""
@@ -127,6 +128,7 @@ class handleMessage(object):
 
     def recvMsg(self):
         """First get the message, then write it into Mysql."""
+        # TODO check state if online write&send else write&push
         self.getMsg()
         self.getTarPID()
         self.writeMsg()
@@ -142,7 +144,7 @@ class handleMessage(object):
         self.openMysqlCur()
         self.getLocalTime()
         stmt_insert = "INSERT INTO `%s`( `from`, `to`, `time`, `type`, `content`, `unread`)\
-            VALUES(%s, %s, '%s', %s, '%s', %d)" % (self.msg["to"],self.msg["from"],self.msg["to"],self.time,self.msg["type"],self.msg["content"], 1)
+            VALUES(%s, %s, '%s', %s, '%s', %d)" % (self.msg["to"], self.msg["from"], self.msg["to"], self.time, self.msg["type"], self.msg["content"], 1)
         self.cur.execute(stmt_insert)
         self.closeMysqlCur()
 
@@ -210,6 +212,50 @@ class handleMessage(object):
     def loginFailed(self):
         self.msg = '{"state":12}'
         self.sendMsg()
+
+    def syncContacts(self):
+        self.openMysqlCur()
+        self.syncDepartment()
+        self.syncJob()
+        self.syncContactDetail()
+        self.closeMysqlCur()
+
+    def syncDepartment(self):
+        stmt_select = "SELECT `id`, `name` FROM `department` ORDER BY id"
+        self.cur.execute(stmt_select)
+        dictDep = {}
+        for row in self.cur.fetchall():
+            dictDep[row[0]] = row[1]
+        # TODO 消息报设计一下
+        self.msg = str(dictDep)
+        self.sendMsg()
+
+    def syncJob(self):
+        stmt_select = "SELECT `id`, `name` FROM `job` ORDER BY id"
+        self.cur.execute(stmt_select)
+        dictJob = {}
+        for row in self.cur.fetchall():
+            dictJob[row[0]] = row[1]
+        # TODO 消息报设计一下
+        self.msg = str(dictJob)
+        self.sendMsg()
+
+    def syncContactDetail(self):
+        stmt_select = "SELECT `id`, `name`, `user`, `department`, `job`, `icon`, `signing` FROM `user` ORDER BY id"
+        self.cur.execute(stmt_select)
+        dictJob = {}
+        for row in self.cur.fetchall():
+            dictJob[row[0]] = {"name":row[1],"user":row[2], "department":row[3], "job":row[4], "icon":row[5], "signing":row[6]}
+        # TODO 消息报设计一下
+        self.msg = str(dictJob)
+        self.sendMsg()
+
+    def updateState(self):
+        self.getMsg()
+        self.openMysqlCur()
+        stmt_update = "UPDATE user SET state=%d WHERE user=%s" % (self.msg["state"], self.msg["user"])
+        self.cur.execute(stmt_update)
+        self.closeMysqlCur()
 
 
 def onMessage(a, b):

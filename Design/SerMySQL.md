@@ -17,7 +17,7 @@
 2. 用户信息表(包含用户姓名、userID(即手机号）、在线状态、所在部门、个性签名、头像、登录密码[、设备信息]等信息)
 3. 广播表
 
-#### 消息表message
+#### 消息表
 
 from	发送者ID(15228977313)(bigint)
 to		接受者ID(13506721360)(bigint)
@@ -26,23 +26,53 @@ type	内容类型(0:文字，1:图片，2:语音)(tinyint)
 content	发送内容(base64编码存储）
 unread	是否读过(0:读过，1:未读)(tinyint)
 
-#### 用户信息表
+#### 用户信息表(user)
 
+````
+测试版账号
+12345678900
+12345678901
+12345678902
+12345678903
+12345678904
+12345678905
+12345678906
+12345678907
+12345678908
+12345678909
+密码为123456
+````
+
+id			id(主键)
 name		姓名(base64)
 user		用户ID(即手机号)
 password	登录密码(md5)
-depart		部门(base64)
-job			职位(base64)
-online		在线(在线：PID，不在线：0)
+department	部门编号
+job			职位编号
+online		在线PID(在线：PID，不在线：0)
+state		状态(0:离线,1:在线,2:pause)
 icon		头像(文件名，base64)
 signing		个性签名(base64)
 equipment	设备(*)
 
-#### 通知表
+#### 通知表(broadcast)
 
 title	通知标题
 type	通知类型(1:通知，2:新闻，3:公告)
 summary	通知摘要
 url		链接
+
+#### 部门表(department)
+
+id		部门编号
+
+name	部门名称(base64)
+
+#### 职位表(job)
+
+id		职位编号
+
+name	职位名称(base64)
+
 
 
