@@ -17,8 +17,8 @@ class handleMessage(object):
     This module provides all kinds of ways to handle message.
     type:
         0 getMessage
-        21888   recvMessage
-        60888   readMessage
+        21888   recvMsg
+        60888   readMsg     readMsg from table
         3 updateProfile
         20888   login
         33888   updateState
@@ -211,6 +211,8 @@ class handleMessage(object):
     def loginSuccess(self):
         self.msg = '{"state":11}'
         self.sendMsg()
+        time.sleep(2)
+        self.readMsg()
 
     def loginFailed(self):
         self.msg = '{"state":12}'
