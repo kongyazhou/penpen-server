@@ -89,18 +89,153 @@ PenPen服务器端采用Webscketd框架，程序用Python语言开发。
 
 [Anaconda](https://github.com/DamnWidget/anaconda)：格式对齐，拼写检查，自动补充，提示等
 
-## 运行环境(稍后补充)
+## 服务器环境搭建
 
 ```
 服务器的环境是操作系统CentOS 6.5内核版本Linux 2.6.32 x86机构64位系统
 ```
 
-#### 运行环境搭建步骤
+#### 安装Mysql
 
-安装Python
+yum安装Mysql
 
-- 搭建Websocketd环境
+```bash
+yum install mysql
+yum install mysql-server
+yum install mysql-devel
+```
 
+启动mysql服务
+
+```bash
+service mysqld start
+```
+
+配置开机启动
+
+```bash
+(查看系统服务中有没有mysqld)
+chkconfig --list | grep mysql*
+(如果没有则添加mysqld服务)
+chkconfig --add mysqld
+(配置开机启动mysqld服务)
+chkconfig mysqld on
+```
+
+创建远程调试账号
+
+并授予权限
+
+#### 安装Go环境
+
+#### 搭建Websocketd环境
+
+#### 安装Python3.4
+
+下载并安装
+
+配置python环境
+
+安装mysqlconnector
+
+#### 安装apache
+
+yum 安装httpd服务
+
+```bahs
+yum install httpd -y
+```
+
+配置开机启动
+
+```bash
+chkconfig httpd on
+```
+
+启动服务
+
+```bash
+service httpd start  
+```
+
+如果启动服务时报错，则修改配置文件
+/etc/httpd/conf/httpd.conf
+将
+```
+#ServerName www.example.com:80
+```
+改为
+```
+ServerName localhost:80
+```
+
+如果还看不到网页，记得关掉防火墙=。=||
+
+```bash
+service iptables stop
+```
+
+#### 安装php
+
+```bash
+yum install php -y
+```
+
+安装PHP组件
+
+```bash
+yum install php-mysql php-gd libjpeg* php-ldap php-odbc php-pear php-xml php-xmlrpc php-mbstring php-bcmath php-mhash
+```
+
+别忘了给upload文件夹加权限(┬＿┬)
+
+```bash
+chmod 777 upload 
+```
+
+#### 配置启动项
+
+配置开机启动命令
+
+修改/etc/rc.d/rc.local
+
+使服务器开机执行服务器端程序
+
+## centos下 Apache、php、mysql默认安装路径
+
+**apache**
+
+如果采用RPM包安装，安装路径应在 /etc/httpd目录下
+
+apache配置文件:/etc/httpd/conf/httpd.conf
+
+Apache模块路径：/usr/sbin/apachectl
+
+web目录:/var/www/html
+
+如果采用源代码安装，一般默认安装在/usr/local/apache2目录下
+
+**php**
+
+如果采用RPM包安装，安装路径应在 /etc/目录下
+
+php的配置文件:/etc/php.ini
+
+如果采用源代码安装，一般默认安装在/usr/local/lib目录下
+
+php配置文件: /usr/local/lib/php.ini或/usr/local/php/etc/php.ini
+
+**mysql**
+
+如果采用RPM包安装，安装路径应在/usr/share/mysql目录下
+
+mysqldump文件位置：/usr/bin/mysqldump
+
+mysql配置文件：/etc/my.cnf或/usr/share/mysql/my.cnf
+
+mysql数据目录：/var/lib/mysql目录下
+
+如果采用源代码安装，一般默认安装在/usr/local/mysql目录下
 
 ## 部署步骤
 
