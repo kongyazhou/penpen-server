@@ -128,15 +128,75 @@ chkconfig mysqld on
 
 #### 安装Go环境
 
+yum安装golang
+
+```
+rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+yum install golang
+```
+
 #### 搭建Websocketd环境
+
+官网下载[websocketd](http://websocketd.com/)。
+
+unzip ...
+
+```
+ln -s /usr/local/src/websocketd /usr/bin/websocketd
+```
 
 #### 安装Python3.4
 
-下载并安装
+下载python3.4.4,建议放到/usr/local/src目录下
 
-配置python环境
+解压
+
+```
+tar -zxvf Python-XXX.tgz
+```
+
+安装
+
+```
+./configure
+make
+make install
+```
+
+python环境
+
+```
+mv /usr/bin/python /usr/bin/python_old
+ln -s /usr/local/bin/python3 /usr/bin/python
+```
+
+修改yum
+
+```
+vi /usr/bin/yum
+```
+
+将
+
+```
+#!/usr/bin/python
+```
+
+改为:
+
+```
+#!/usr/bin/python2.6
+```
 
 安装mysqlconnector
+
+我安装的是平台无关版本
+
+解压后执行安装操作
+
+```
+python setup.py install
+```
 
 #### 安装apache
 
