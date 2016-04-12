@@ -100,9 +100,7 @@ PenPen服务器端采用Webscketd框架，程序用Python语言开发。
 yum安装Mysql
 
 ```bash
-yum install mysql
-yum install mysql-server
-yum install mysql-devel
+yum install mysql mysql-server mysql-devel -y
 ```
 
 启动mysql服务
@@ -132,7 +130,7 @@ yum安装golang
 
 ```
 rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-yum install golang
+yum install golang -y
 ```
 
 #### 搭建Websocketd环境
@@ -159,8 +157,7 @@ tar -zxvf Python-XXX.tgz
 
 ```
 ./configure
-make
-make install
+make && make install
 ```
 
 python环境
@@ -202,7 +199,7 @@ python setup.py install
 
 yum 安装httpd服务
 
-```bahs
+```bash
 yum install httpd -y
 ```
 
@@ -216,17 +213,6 @@ chkconfig httpd on
 
 ```bash
 service httpd start  
-```
-
-如果启动服务时报错，则修改配置文件
-/etc/httpd/conf/httpd.conf
-将
-```
-#ServerName www.example.com:80
-```
-改为
-```
-ServerName localhost:80
 ```
 
 如果还看不到网页，记得关掉防火墙=。=||
@@ -247,11 +233,19 @@ yum install php -y
 yum install php-mysql php-gd libjpeg* php-ldap php-odbc php-pear php-xml php-xmlrpc php-mbstring php-bcmath php-mhash
 ```
 
+vi /etc/httpd/conf/httpd.conf 
+
+```
+DirectoryIndex index.html 加上index.php
+```
+
 别忘了给upload文件夹加权限(┬＿┬)
 
 ```bash
 chmod 777 upload 
 ```
+配置
+upload_tmp_dir = /var/www/temp/
 
 #### 配置启动项
 
@@ -260,6 +254,50 @@ chmod 777 upload
 修改/etc/rc.d/rc.local
 
 使服务器开机执行服务器端程序
+
+#### AWS RedHat
+
+由于华为云到期，不得不将开发调试工作搬到AWS上，一时手贱选了RedHat系统，结果为了一些小配置就花了两三天，记录一下。
+
+AWS**密钥**生成
+
+```bash
+chmod 600 xxx.pem 
+ssh-keygen -p -f xxx.pem 
+ssh-keygen -e -f xxx.pem > xxx.pem.pub
+```
+
+**数据库**是mariaDB不是Mysql,安装mariaDB
+
+```bash
+yum -y install mariadb*
+systemctl start mariadb
+chkconfig mariadb on (等效于systemctl enable mariadb.service)
+```
+
+首先，RedHat7上的**防火墙**不是iptables而是SELinux
+
+```
+开发阶段为了方便暂时不考虑详细配置，直接关闭防火墙
+```
+
+1、临时关闭（不用重启机器）：
+
+```
+setenforce 0 
+```
+
+2、修改配置文件需要重启机器：
+
+```
+修改/etc/selinux/config 文件
+将SELINUX=enforcing改为SELINUX=disabled
+重启机器即可
+```
+
+《[查看 SELinux状态及关闭SELinux](http://bguncle.blog.51cto.com/3184079/957315/)》
+
+漫漫长路，遍地是坑。
 
 ## centos下 Apache、php、mysql默认安装路径
 
