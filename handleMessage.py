@@ -17,12 +17,12 @@ class handleMessage(object):
     This module provides all kinds of ways to handle message.
     type:
         0 getMessage
-        21888   recvMsg
-        60888   readMsg     readMsg from table
-        3 updateProfile
         20888   login
+        21888   recvMsg
+        31888   updateSigning
         33888   updateState
-        51888   syncContacts
+        51888   syncAllContacts
+        60888   readMsg     readMsg from table
         other error
     """
 
@@ -32,18 +32,18 @@ class handleMessage(object):
         self.push = self._jpush.create_push()
         if self.type == 0:
             self.getMsg()
-        elif self.type == 21888:
-            self.recvMsg()
-        elif self.type == 60888:
-            self.readMsg()
-        elif self.type == 3:
-            self.updateProfile()
         elif self.type == 20888:
             self.login()
+        elif self.type == 21888:
+            self.recvMsg()
+        elif self.type == 31888:
+            self.updateSigning()
         elif self.type == 33888:
             self.updateState()
         elif self.type == 51888:
-            self.syncContacts()
+            self.syncAllContacts()
+        elif self.type == 60888:
+            self.readMsg()
         else:
             pass
 
@@ -51,10 +51,7 @@ class handleMessage(object):
         self.__init__(handleType)
 
     def getMsg(self):
-        # TODO should be stdin
-        # jsonMsg = input()
         jsonMsg = stdin.readline()
-        # transmit json to python object
         self.msg = json.loads(jsonMsg)
         if self.checkVersion():
             pass
@@ -218,55 +215,52 @@ class handleMessage(object):
         self.msg = '{"state":12}'
         self.sendMsg()
 
-    def syncContacts(self):
-        # Unfinished
+    def syncAllContacts(self):
         self.openMysqlCur()
-        self.syncDepartment()
-        self.syncJob()
-        self.syncContactDetail()
+        self.getDepartments()
+        self.getJobs()
+        self.getAllContacts()
         self.closeMysqlCur()
+        self.msg = str({"departments": self.dictDep, "jobs": self.dictJob, "contacts": self.arryCon})
+        # For test
+        # print(self.msg)
+        self.sendMsg()
 
-    def syncDepartment(self):
-        # Unfinished
+    def getDepartments(self):
         stmt_select = "SELECT `id`, `name` FROM `department` ORDER BY id"
         self.cur.execute(stmt_select)
-        dictDep = {}
+        self.dictDep = {}
         for row in self.cur.fetchall():
-            dictDep[row[0]] = row[1]
-        # TODO 消息报设计一下
-        self.msg = str(dictDep)
-        self.sendMsg()
+            self.dictDep[row[0]] = row[1]
 
-    def syncJob(self):
-        # Unfinished
+    def getJobs(self):
         stmt_select = "SELECT `id`, `name` FROM `job` ORDER BY id"
         self.cur.execute(stmt_select)
-        dictJob = {}
+        self.dictJob = {}
         for row in self.cur.fetchall():
-            dictJob[row[0]] = row[1]
-        # TODO 消息报设计一下
-        self.msg = str(dictJob)
-        self.sendMsg()
+            self.dictJob[row[0]] = row[1]
 
-    def syncContactDetail(self):
-        # Unfinished
-        stmt_select = "SELECT `id`, `name`, `user`, `department`, `job`, `icon`, `signing` FROM `user` ORDER BY id"
+    def getAllContacts(self):
+        stmt_select = "SELECT `id`, `name`, `user`, `department`, `job`, `signing` FROM `user` ORDER BY id"
         self.cur.execute(stmt_select)
-        dictJob = {}
+        self.arryCon = []
         for row in self.cur.fetchall():
-            dictJob[row[0]] = {"name": row[1], "user": row[2], "department": row[3], "job": row[4], "icon": row[5], "signing": row[6]}
-        # TODO 消息报设计一下
-        self.msg = str(dictJob)
-        self.sendMsg()
+            self.arryCon.append({"name": row[1], "user": row[2], "department": row[3], "job": row[4], "signing": row[5]})
 
     def updateState(self):
-        # Unfinished
         self.getMsg()
         self.openMysqlCur()
         stmt_update = "UPDATE user SET state=%d WHERE user=%s" % (self.msg["state"], self.msg["user"])
         self.cur.execute(stmt_update)
         self.closeMysqlCur()
 
+    def updateSigning(self):
+        self.getMsg()
+        self.openMysqlCur()
+        stmt_update = "UPDATE user SET signing=%d WHERE user=%s" % (self.msg["signing"], self.msg["user"])
+        self.cur.execute(stmt_update)
+        self.closeMysqlCur()
+
 
 if __name__ == '__main__':
-    a = handleMessage(4)
+    a = handleMessage(51888)
