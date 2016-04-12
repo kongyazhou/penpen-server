@@ -120,9 +120,23 @@ chkconfig --add mysqld
 chkconfig mysqld on
 ```
 
-创建远程调试账号
+设置root帐号密码
 
-并授予权限
+```bash
+mysqladmin -u root password "newpass"
+```
+
+创建账号
+
+```
+CREATE USER 'penpen'@'%' IDENTIFIED BY 'a1s2D3F4G5';
+```
+
+授权
+
+```
+GRANT ALL PRIVILEGES ON *.* TO 'penpen'@'%' IDENTIFIED BY 'a1s2D3F4G5' WITH GRANT OPTION; flush privileges;
+```
 
 #### 安装Go环境
 
@@ -145,22 +159,20 @@ ln -s /usr/local/src/websocketd /usr/bin/websocketd
 
 #### 安装Python3.4
 
-下载python3.4.4,建议放到/usr/local/src目录下
+1. **安装**
 
-解压
+下载python3.4.4，建议放到/usr/local/src目录下，解压并安装：
 
 ```
 tar -zxvf Python-XXX.tgz
-```
-
-安装
-
-```
+cd Python-XXX
 ./configure
 make && make install
 ```
 
-python环境
+2. **修改环境**
+
+python环境(视情况而定)
 
 ```
 mv /usr/bin/python /usr/bin/python_old
@@ -185,11 +197,19 @@ vi /usr/bin/yum
 #!/usr/bin/python2.6
 ```
 
-安装mysqlconnector
+3. **安装mysql-connector**
 
 我安装的是平台无关版本
 
 解压后执行安装操作
+
+```
+python setup.py install
+```
+
+4. **安装jpush**
+
+下载jpush-api-python
 
 ```
 python setup.py install
@@ -251,9 +271,16 @@ upload_tmp_dir = /var/www/temp/
 
 配置开机启动命令
 
-修改/etc/rc.d/rc.local
+修改/etc/rc.d/rc.local，使服务器开机执行服务器端程序
 
-使服务器开机执行服务器端程序
+```bash
+sudo websocketd --port=20888 python344 /home/ec2-user/penpen/20888.py &
+sudo websocketd --port=21888 python344 /home/ec2-user/penpen/21888.py &
+```
+
+```bash
+chmod +x /etc/rc.d/rc.local
+```
 
 #### AWS RedHat
 
@@ -281,19 +308,27 @@ chkconfig mariadb on (等效于systemctl enable mariadb.service)
 开发阶段为了方便暂时不考虑详细配置，直接关闭防火墙
 ```
 
+查看防火墙状态：
+
+```bash
+/usr/sbin/sestatus -v
+```
+
 1、临时关闭（不用重启机器）：
 
-```
+```bash
 setenforce 0 
 ```
 
 2、修改配置文件需要重启机器：
 
-```
 修改/etc/selinux/config 文件
-将SELINUX=enforcing改为SELINUX=disabled
-重启机器即可
+
+```bash
+SELINUX=enforcing => SELINUX=disabled
 ```
+
+重启机器即可
 
 《[查看 SELinux状态及关闭SELinux](http://bguncle.blog.51cto.com/3184079/957315/)》
 
