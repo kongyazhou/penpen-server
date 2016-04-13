@@ -257,7 +257,7 @@ class handleMessage(object):
     def updateSigning(self):
         self.getMsg()
         self.openMysqlCur()
-        stmt_update = "UPDATE user SET signing=%d WHERE user=%s" % (self.msg["signing"], self.msg["user"])
+        stmt_update = "UPDATE `user` SET `signing`='%s' WHERE `user`=%s" % (self.msg["signing"], self.msg["user"])
         self.cur.execute(stmt_update)
         self.closeMysqlCur()
 
