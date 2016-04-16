@@ -6,7 +6,7 @@ import time
 
 
 def onMessage(a, b):
-    hm(60888)
+    hm(1)
 
 if __name__ == '__main__':
     signal.signal(signal.SIGCHLD, onMessage)

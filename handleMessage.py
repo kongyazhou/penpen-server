@@ -16,13 +16,14 @@ class handleMessage(object):
     """
     This module provides all kinds of ways to handle message.
     type:
-        0 getMessage
+        0       getMessage
+        1       readMsg     readMsg from table
         20888   login
         21888   recvMsg
         31888   updateSigning
         33888   updateState
         51888   syncAllContacts
-        60888   readMsg     readMsg from table
+        60888   createGroup
         other error
     """
 
@@ -32,6 +33,8 @@ class handleMessage(object):
         self.push = self._jpush.create_push()
         if self.type == 0:
             self.getMsg()
+        elif self.type == 1:
+            self.readMsg()
         elif self.type == 20888:
             self.login()
         elif self.type == 21888:
@@ -43,7 +46,7 @@ class handleMessage(object):
         elif self.type == 51888:
             self.syncAllContacts()
         elif self.type == 60888:
-            self.readMsg()
+            self.createGroup()
         else:
             pass
 
@@ -259,6 +262,13 @@ class handleMessage(object):
         self.openMysqlCur()
         stmt_update = "UPDATE `user` SET `signing`='%s' WHERE `user`=%s" % (self.msg["signing"], self.msg["user"])
         self.cur.execute(stmt_update)
+        self.closeMysqlCur()
+
+    def createGroup(self):
+        self.getMsg()
+        self.openMysqlCur()
+        stmt_insert = "INSERT INTO `group`( `holder`,`name`, `member`) VALUES('%s','%s', '%s')" % (self.msg["holder"], self.msg["name"], self.msg["member"])
+        self.cur.execute(stmt_insert)
         self.closeMysqlCur()
 
 
