@@ -20,11 +20,13 @@ class handleMessage(object):
         1       readMsg     readMsg from table
         20888   login
         21888   recvMsg
+        26888   recvGroupMsg
         31888   updateSigning
         33888   updateState
         51888   syncAllContacts
+        53888   syncAllGroups
         60888   createGroup
-        other error
+        other   error
     """
 
     def __init__(self, handleType=66):
@@ -39,12 +41,16 @@ class handleMessage(object):
             self.login()
         elif self.type == 21888:
             self.recvMsg()
+        elif self.type == 26888:
+            self.recvGroupMsg()
         elif self.type == 31888:
             self.updateSigning()
         elif self.type == 33888:
             self.updateState()
         elif self.type == 51888:
             self.syncAllContacts()
+        elif self.type == 53888:
+            self.syncAllGroups()
         elif self.type == 60888:
             self.createGroup()
         else:
@@ -142,12 +148,47 @@ class handleMessage(object):
             self.pushMsg()
             pass
 
+    def recvGroupMsg(self):
+        """First get the message, then write it into Mysql."""
+        self.getMsg()
+        self.groupGID = self.msg["to"]
+        # get group members array by gid
+        self.getGroupMembers()
+        for member in self.groupMembers:
+            self.msg["to"] = member
+            self.getTarPID()
+            self.writeGroupMsg()
+            if self.tarPID:
+                # TOTEST
+                os.kill(self.tarPID, signal.SIGCHLD)
+                self.pushMsg()
+            else:
+                self.pushMsg()
+                pass
+
+    def getGroupMembers(self):
+        # TODO
+        self.openMysqlCur()
+        stmt_select = "SELECT `member` FROM `group` WHERE gid=%s" % (self.groupGID,)
+        self.cur.execute(stmt_select)
+        self.groupMembers = self.cur.fetchone()[0].split(',')
+        self.closeMysqlCur()
+        pass
+
+    def writeGroupMsg(self):
+        self.openMysqlCur()
+        self.getLocalTime()
+        stmt_insert = "INSERT INTO `%s`( `from`, `to`, `time`, `type`, `content`, `unread`)\
+            VALUES(%s, '%s', '%s', '%s', '%s', %d)" % (self.msg["to"], self.msg["from"], self.groupGID, self.time, self.msg["type"], self.msg["content"], 1)
+        self.cur.execute(stmt_insert)
+        self.closeMysqlCur()
+
     def writeMsg(self):
         """Write the message to target's unread table"""
         self.openMysqlCur()
         self.getLocalTime()
         stmt_insert = "INSERT INTO `%s`( `from`, `to`, `time`, `type`, `content`, `unread`)\
-            VALUES(%s, %s, '%s', %s, '%s', %d)" % (self.msg["to"], self.msg["from"], self.msg["to"], self.time, self.msg["type"], self.msg["content"], 1)
+            VALUES('%s', '%s', '%s', '%s', '%s', %d)" % (self.msg["to"], self.msg["from"], self.msg["to"], self.time, self.msg["type"], self.msg["content"], 1)
         self.cur.execute(stmt_insert)
         self.closeMysqlCur()
 
@@ -229,6 +270,19 @@ class handleMessage(object):
         # print(self.msg)
         self.sendMsg()
 
+    def syncAllGroups(self):
+        self.openMysqlCur()
+        stmt_select = "SELECT `gid`, `holder`, `name`, `member` FROM `group`"
+        self.cur.execute(stmt_select)
+        self.arrayGroup = []
+        for row in self.cur.fetchall():
+            self.arrayGroup.append({"gid": row[0], "holder": row[1], "name": row[2], "member": row[3]})
+        self.closeMysqlCur()
+        self.msg = str({"groups": self.arrayGroup})
+        # for test
+        # print(self.msg)
+        self.sendMsg()
+
     def getDepartments(self):
         stmt_select = "SELECT `id`, `name` FROM `department` ORDER BY id"
         self.cur.execute(stmt_select)
@@ -269,8 +323,37 @@ class handleMessage(object):
         self.openMysqlCur()
         stmt_insert = "INSERT INTO `group`( `holder`,`name`, `member`) VALUES('%s','%s', '%s')" % (self.msg["holder"], self.msg["name"], self.msg["member"])
         self.cur.execute(stmt_insert)
+        stmt_select = "SELECT `gid` FROM `group` WHERE `holder`='%s' AND `name`='%s'" % (self.msg["holder"], self.msg["name"])
+        self.cur.execute(stmt_select)
+        self.groupGID = self.cur.fetchone()[0]
         self.closeMysqlCur()
+        # TODO 给member通知
+        # get group members array by gid
+        self.groupMembers = self.msg["member"].split(',')
+        self.group = self.msg
+        self.dictContent = {
+            "holder": self.group["holder"],
+            "name": self.group["name"],
+            "member": self.group["member"]
+        }
+        for member in self.groupMembers:
+            self.msg = {
+                "from": "0",
+                "to": member,
+                "type": 19,
+                "content": str(base64.b64encode(bytes(str(self.dictContent), encoding="utf-8")), encoding="utf-8")
+            }
+            self.getTarPID()
+            self.writeGroupMsg()
+            if self.tarPID:
+                try:
+                    os.kill(self.tarPID, signal.SIGCHLD)
+                except:
+                    pass
+            else:
+                self.pushMsg()
+                pass
 
 
 if __name__ == '__main__':
-    a = handleMessage(51888)
+    a = handleMessage(53888)

@@ -105,6 +105,7 @@ name	职位名称(base64)
 
 ```
 gid		讨论组ID(主键)
+holder	创建人(user)
 name	讨论组名称
 member	成员(以逗号分隔)
 ```
