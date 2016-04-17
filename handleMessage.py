@@ -155,16 +155,20 @@ class handleMessage(object):
         # get group members array by gid
         self.getGroupMembers()
         for member in self.groupMembers:
-            self.msg["to"] = member
-            self.getTarPID()
-            self.writeGroupMsg()
-            if self.tarPID:
-                # TOTEST
-                os.kill(self.tarPID, signal.SIGCHLD)
-                self.pushMsg()
-            else:
-                self.pushMsg()
-                pass
+            if member != self.msg["from"]:
+                self.msg["to"] = member
+                self.getTarPID()
+                self.writeGroupMsg()
+                if self.tarPID:
+                    # TOTEST
+                    try:
+                        os.kill(self.tarPID, signal.SIGCHLD)
+                        self.pushMsg()
+                    except:
+                        self.pushMsg()
+                else:
+                    self.pushMsg()
+                    pass
 
     def getGroupMembers(self):
         # TODO
@@ -265,7 +269,7 @@ class handleMessage(object):
         self.getJobs()
         self.getAllContacts()
         self.closeMysqlCur()
-        self.msg = str({"departments": self.dictDep, "jobs": self.dictJob, "contacts": self.arryCon})
+        self.msg = str({"departments": self.dictDep, "jobs": self.dictJob, "contacts": self.arrayCon})
         # For test
         # print(self.msg)
         self.sendMsg()
@@ -300,9 +304,9 @@ class handleMessage(object):
     def getAllContacts(self):
         stmt_select = "SELECT `id`, `name`, `user`, `department`, `job`, `signing` FROM `user` ORDER BY id"
         self.cur.execute(stmt_select)
-        self.arryCon = []
+        self.arrayCon = []
         for row in self.cur.fetchall():
-            self.arryCon.append({"name": row[1], "user": row[2], "department": row[3], "job": row[4], "signing": row[5]})
+            self.arrayCon.append({"name": row[1], "user": row[2], "department": row[3], "job": row[4], "signing": row[5]})
 
     def updateState(self):
         self.getMsg()
