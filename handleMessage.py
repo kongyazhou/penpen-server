@@ -247,7 +247,10 @@ class handleMessage(object):
         pass
 
     def getLocalTime(self):
-        self.time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
+        # America time
+        self.time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time() + 3600 * 12))
+        # seconds since 1970
+        # self.time = int(time.time())
 
     # def createPush(self):
     #     _jpush = jpush.JPush(app_key, master_secret)
