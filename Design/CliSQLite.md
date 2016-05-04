@@ -12,29 +12,20 @@
 
 #### lastMessage
 
+```
+包含单聊与群聊
+```
+
 表名：lastMessage
 
 ```
 id(int)(主键)
-user(text)(12345678900)
+user(text)(userID or groupID)
 name(text)
 icon(text)
+type(int)(0:contact message,1:group message)
 lastMessage(text)
-lastTime(text)
-unreadNo(int)
-```
-
-
-#### lastGroupMessage
-
-表名：lastGroupMessage
-
-```
-id(int)(主键)
-gid(text)(1)
-name(text)
-lastMessage(text)
-lastTime(text)
+lastTime(datetime)
 unreadNo(int)
 ```
 
@@ -45,6 +36,7 @@ unreadNo(int)
 ```
 id(int)(主键)
 isFromMe(int)
+type(int)
 content(text)
 time(text)
 unread(预留，未使用)
