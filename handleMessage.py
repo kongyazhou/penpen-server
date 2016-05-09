@@ -206,7 +206,11 @@ class handleMessage(object):
 
     def pushMsg(self):
         self.push.audience = jpush.audience(jpush.alias("penpen" + self.msg["to"]))
-        self.push.notification = jpush.notification(alert=str(base64.b64decode(self.msg["content"]), encoding="utf-8"))
+        if int(self.msg["type"]) < 10:
+            self.push.notification = jpush.notification(android=jpush.android(alert=str(base64.b64decode(self.msg["content"]), encoding="utf-8"), extras={'user':self.msg["from"]}))
+        else:
+            self.push.notification = jpush.notification(android=jpush.android(alert=str(base64.b64decode(self.msg["content"]), encoding="utf-8"), extras={'user':self.groupGID}))
+        # self.push.options = {"title":"12345678908"}
         self.push.platform = jpush.all_
         self.push.send()
         pass
