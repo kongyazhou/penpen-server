@@ -161,10 +161,11 @@ class handleMessage(object):
         # get group members array by gid
         self.getGroupMembers()
         for member in self.groupMembers:
+            # if member != self.msg["from"]:
+            self.msg["to"] = member
+            self.writeGroupMsg()
             if member != self.msg["from"]:
-                self.msg["to"] = member
                 self.getTarPID()
-                self.writeGroupMsg()
                 if self.tarPID:
                     # TOTEST
                     try:
@@ -188,9 +189,15 @@ class handleMessage(object):
     def writeGroupMsg(self):
         self.openMysqlCur()
         self.getLocalTime()
-        stmt_insert = "INSERT INTO `%s`( `from`, `to`, `time`, `type`, `content`, `unread`)\
-            VALUES(%s, '%s', '%s', '%s', '%s', %d)" % (self.msg["to"], self.msg["from"], self.groupGID, self.time, self.msg["type"], self.msg["content"], 1)
-        self.cur.execute(stmt_insert)
+        if self.msg["to"] != self.msg["from"]:
+            pass
+            stmt_insert = "INSERT INTO `%s`( `from`, `to`, `time`, `type`, `content`, `unread`)\
+                VALUES(%s, '%s', '%s', '%s', '%s', %d)" % (self.msg["to"], self.msg["from"], self.groupGID, self.time, self.msg["type"], self.msg["content"], 1)
+            self.cur.execute(stmt_insert)
+        else:
+            stmt_insert = "INSERT INTO `%s`( `from`, `to`, `time`, `type`, `content`, `unread`)\
+                VALUES(%s, '%s', '%s', '%s', '%s', %d)" % (self.msg["to"], self.msg["from"], self.groupGID, self.time, self.msg["type"], self.msg["content"], 0)
+            self.cur.execute(stmt_insert)
         self.closeMysqlCur()
 
     def writeMsg(self):
