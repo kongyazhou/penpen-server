@@ -1,4 +1,4 @@
-# penpen-protocol
+# protocol-design
 
 ```
 本文档将介绍penpen使用的通信协议以及通信的流程。
@@ -129,8 +129,6 @@ syncDeamon收到SIGNAL后，从未读数据库中取出数据，加密组包后�
 
 [站长之家在线加密](http://tool.chinaz.com/tools/md5.aspx)
 
-- **服务器至客户端**
-
 **登录状态返回包**s2c
 
 ```json
@@ -209,6 +207,26 @@ syncDeamon收到SIGNAL后，从未读数据库中取出数据，加密组包后�
 
 }
 ```
+
+**同步所有消息请求包**c2s
+
+```json
+{
+	"user":"123",(请求者ID)
+	"target":"12345678909"(目标ID)
+}
+```
+
+**同步所有消息返回包**s2c
+
+```json
+{
+	"messages":"[{"from":"%s","to":"%s","time":"%s","type":%d,"content":"%s"},
+		{}, ... ,{}]"(所有消息)
+}
+```
+
+
 
 
 

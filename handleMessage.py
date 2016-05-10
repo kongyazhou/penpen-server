@@ -18,11 +18,13 @@ class handleMessage(object):
     type:
         0       getMessage
         1       readMsg     readMsg from table
+        2       writeMsg    writeMsg
         20888   login
         21888   recvMsg
         26888   recvGroupMsg
         31888   updateSigning
         33888   updateState
+        50888   syncAllMessages
         51888   syncAllContacts
         53888   syncAllGroups
         60888   createGroup
@@ -37,6 +39,8 @@ class handleMessage(object):
             self.getMsg()
         elif self.type == 1:
             self.readMsg()
+        elif self.type == 2:
+            self.writeMsg()
         elif self.type == 20888:
             self.login()
         elif self.type == 21888:
@@ -47,6 +51,8 @@ class handleMessage(object):
             self.updateSigning()
         elif self.type == 33888:
             self.updateState()
+        elif self.type == 50888:
+            self.syncAllMessages()
         elif self.type == 51888:
             self.syncAllContacts()
         elif self.type == 53888:
@@ -191,8 +197,13 @@ class handleMessage(object):
         """Write the message to target's unread table"""
         self.openMysqlCur()
         self.getLocalTime()
+        # Add message to receiver's table
         stmt_insert = "INSERT INTO `%s`( `from`, `to`, `time`, `type`, `content`, `unread`)\
             VALUES('%s', '%s', '%s', '%s', '%s', %d)" % (self.msg["to"], self.msg["from"], self.msg["to"], self.time, self.msg["type"], self.msg["content"], 1)
+        self.cur.execute(stmt_insert)
+        # Add message to sender's table
+        stmt_insert = "INSERT INTO `%s`( `from`, `to`, `time`, `type`, `content`, `unread`)\
+            VALUES('%s', '%s', '%s', '%s', '%s', %d)" % (self.msg["from"], self.msg["from"], self.msg["to"], self.time, self.msg["type"], self.msg["content"], 0)
         self.cur.execute(stmt_insert)
         self.closeMysqlCur()
 
@@ -268,6 +279,19 @@ class handleMessage(object):
 
     def loginFailed(self):
         self.msg = '{"state":12}'
+        self.sendMsg()
+
+    def syncAllMessages(self):
+        # TODO
+        self.getMsg()
+        self.openMysqlCur()
+        stmt_select = "SELECT `from`, `to`, `time`, `type`, `content` FROM `%s` WHERE `to`=%s OR `from`=%s ORDER BY id" % (self.msg["user"],self.msg["target"],self.msg["target"])
+        self.cur.execute(stmt_select)
+        self.msg = []
+        for row in self.cur.fetchall():
+            self.msg.append('{"from":"%s","to":"%s","time":"%s","type":%d,"content":"%s"}' % (row[0], row[1], row[2], row[3], row[4]))
+        self.closeMysqlCur()
+        self.msg = str({"messages":self.msg})
         self.sendMsg()
 
     def syncAllContacts(self):

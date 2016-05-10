@@ -1,5 +1,18 @@
-# Sqlite
+# Sqlite-design
 
+## 插件
+
+[Cordova-sqlite-storage](https://github.com/litehelpers/Cordova-sqlite-storage)
+
+当前使用的版本(插件有些小BUG，一直在更新，谨慎升级)：
+
+```
+id = "cordova-sqlite-storage"
+version = "0.8.5"
+```
+
+## 设计
+ 
 ```
 当前设计着重解决消息存储，读取的策略
 ```
@@ -20,7 +33,7 @@
 
 ```
 id(int)(主键)
-user(text)(userID or groupID)
+user(text)(userID 或者 groupID)
 name(text)
 icon(text)
 type(int)(0:contact message,1:group message)
@@ -29,9 +42,9 @@ lastTime(datetime)
 unreadNo(int)
 ```
 
-#### allMessage
+#### contactMessage
 
-表名：penpen1234567890(user)
+表名：penpen12345678900(user)
 
 ```
 id(int)(主键)

@@ -1,4 +1,4 @@
-# UIdesign
+# UI-design
 
 本文档记录项目UI设计使用到的技术和资料
 
@@ -7,7 +7,7 @@
 1. ionic 创建的最新的项目就很好，非常值得学习
 
 ```bash
-	$ ionic start myApp tabs
+$ ionic start myApp tabs
 ```
 
 2. 某某在ionic示例项目上稍作修改模仿微信界面的产品
