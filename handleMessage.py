@@ -1,12 +1,13 @@
 #!/usr/bin/env python3.4
-import jpush as jpush
-from conf import app_key, master_secret
+# import jpush as jpush
+# from conf import app_key, master_secret
 import mysql.connector
 import json
 import os
 import base64
 import time
 import signal
+import sms253
 from sys import stdout
 from sys import stdin
 
@@ -18,12 +19,17 @@ class handleMessage(object):
     type:
         0       getMessage
         1       readMsg     readMsg from table
-        2       writeMsg    writeMsg
+        2       sendMsg     sendMsg to client
+        3       writeMsg    writeMsg
+        6       sendSMS
+        7       checkSignupUser
         20888   login
         21888   recvMsg
         26888   recvGroupMsg
+        30666   signupSMS
+        30888   signup
         31888   updateSigning
-        33888   updateState
+        33888   updateStatus
         50888   syncAllMessages
         51888   syncAllContacts
         53888   syncAllGroups
@@ -33,24 +39,34 @@ class handleMessage(object):
 
     def __init__(self, handleType=66):
         self.type = handleType
-        self._jpush = jpush.JPush(app_key, master_secret)
-        self.push = self._jpush.create_push()
+        # self._jpush = jpush.JPush(app_key, master_secret)
+        # self.push = self._jpush.create_push()
         if self.type == 0:
             self.getMsg()
         elif self.type == 1:
             self.readMsg()
         elif self.type == 2:
+            self.sendMsg()
+        elif self.type == 3:
             self.writeMsg()
+        elif self.type == 6:
+            self.sendSMS()
+        elif self.type == 7:
+            self.checkSignupUser()
         elif self.type == 20888:
             self.login()
         elif self.type == 21888:
             self.recvMsg()
         elif self.type == 26888:
             self.recvGroupMsg()
+        elif self.type == 30666:
+            self.signupSMS()
+        elif self.type == 30888:
+            self.signup()
         elif self.type == 31888:
             self.updateSigning()
         elif self.type == 33888:
-            self.updateState()
+            self.updateStatus()
         elif self.type == 50888:
             self.syncAllMessages()
         elif self.type == 51888:
@@ -84,6 +100,9 @@ class handleMessage(object):
             # TODO
             pass
 
+    def sendSMS(self):
+        sms253.send_sms(self.SMS, self.user)
+
     def checkVersion(self):
         if self.msg["tail"] == "PENPEN 1.0":
             return 1
@@ -101,7 +120,7 @@ class handleMessage(object):
             'port': 3306,
             'database': 'penpen',
             'user': 'root',
-            'password': '1',
+            'password': 'a1s2D3F4G5!',
             'charset': 'utf8',
             'use_unicode': True,
             'get_warnings': True,
@@ -120,6 +139,7 @@ class handleMessage(object):
 
     def codeMsg(self):
         # code msg
+        self.msg = str(self.msg)
         self.codeID = 1110
         self.msg = {"head": self.codeID, "body": str(base64.b64encode(bytes(self.msg, encoding="utf-8")), encoding="utf-8"), "tail": "PENPEN 1.0"}
 
@@ -134,7 +154,7 @@ class handleMessage(object):
             self.msg = '{"from":"%s","to":"%s","time":"%s","type":%d,"content":"%s"}' % (row[0], row[1], row[2], row[3], row[4])
             readID.append((int(self.user), row[5]))
             self.sendMsg()
-        # Change unread state to 0
+        # Change unread status to 0
         stmt_update = "UPDATE `%s` SET unread=0 WHERE id=%s"
         self.cur.executemany(stmt_update, tuple(readID))
         self.cnx.commit()
@@ -142,7 +162,7 @@ class handleMessage(object):
 
     def recvMsg(self):
         """First get the message, then write it into Mysql."""
-        # TODO check state if online write&send else write&push
+        # TODO check status if online write&send else write&push
         self.getMsg()
         self.getTarPID()
         self.writeMsg()
@@ -215,7 +235,7 @@ class handleMessage(object):
         self.closeMysqlCur()
 
     def getTarPID(self):
-        """Get the PID of target from OnlineState database."""
+        """Get the PID of target from OnlineStatus database."""
         self.openMysqlCur()
         stmt_select = "SELECT online FROM user WHERE user=%s" % (self.msg["to"],)
         self.cur.execute(stmt_select)
@@ -223,14 +243,14 @@ class handleMessage(object):
         self.closeMysqlCur()
 
     def pushMsg(self):
-        self.push.audience = jpush.audience(jpush.alias("penpen" + self.msg["to"]))
-        if int(self.msg["type"]) < 10:
-            self.push.notification = jpush.notification(android=jpush.android(alert=str(base64.b64decode(self.msg["content"]), encoding="utf-8"), extras={'user':self.msg["from"]}))
-        else:
-            self.push.notification = jpush.notification(android=jpush.android(alert=str(base64.b64decode(self.msg["content"]), encoding="utf-8"), extras={'user':self.groupGID}))
-        # self.push.options = {"title":"12345678908"}
-        self.push.platform = jpush.all_
-        self.push.send()
+        # self.push.audience = jpush.audience(jpush.alias("penpen" + self.msg["to"]))
+        # if int(self.msg["type"]) < 10:
+        #     self.push.notification = jpush.notification(android=jpush.android(alert=str(base64.b64decode(self.msg["content"]), encoding="utf-8"), extras={'user':self.msg["from"]}))
+        # else:
+        #     self.push.notification = jpush.notification(android=jpush.android(alert=str(base64.b64decode(self.msg["content"]), encoding="utf-8"), extras={'user':self.groupGID}))
+        # # self.push.options = {"title":"12345678908"}
+        # self.push.platform = jpush.all_
+        # self.push.send()
         pass
 
     def login(self):
@@ -246,6 +266,78 @@ class handleMessage(object):
         stmt_update = "UPDATE user SET online=%d WHERE user=%s" % (os.getpid(), self.user)
         self.cur.execute(stmt_update)
         self.closeMysqlCur()
+
+    def signup(self):
+        self.getMsg()
+        self.user = self.msg["user"]
+        if self.checkSignupCaptcha():
+            self.openMysqlCur()
+            stmt_update = "UPDATE user SET name='%s', password='%s' WHERE user=%s" % (self.msg["name"], self.msg["password"], self.user)
+            self.cur.execute(stmt_update)
+        else:
+            pass
+        self.msg = {"user": self.msg["user"], "status": self.status, "time": self.getLocalTime()}
+        self.sendMsg()
+
+    def checkSignupCaptcha(self):
+        # TODO 验证码超时判断
+        self.openMysqlCur()
+        stmt_select = "SELECT captcha FROM user WHERE user=%s" % (self.user)
+        self.cur.execute(stmt_select)
+        self.captcha = self.cur.fetchone()[0]
+        self.closeMysqlCur()
+        if self.msg["captcha"] == self.captcha:
+            self.status = 0
+            return True
+        else:
+            self.status = 1
+            return False
+
+    def signupSMS(self):
+        self.getMsg()
+        self.user = self.msg["user"]
+        if self.checkSignupUser():
+            self.getCaptcha()
+            self.writeSignupCaptcha()
+            self.getSignupSMS()
+            # self.sendSMS()
+        else:
+            # TODO
+            self.SMS = "您的账号已存在，若遗忘密码，请在点击忘记密码操作。"
+            pass
+        self.msg = {"user": self.user, "status": self.status, "SMS": self.SMS, "time": self.getLocalTime()}
+        self.sendMsg()
+
+    def checkSignupUser(self):
+        self.openMysqlCur()
+        stmt_select = "SELECT password FROM user WHERE user=%s" % (self.user)
+        self.cur.execute(stmt_select)
+        try:
+            self.password = self.cur.fetchone()[0]
+        except:
+            self.status = 0
+            return True
+        else:
+            self.status = 1
+            return False
+        finally:
+            self.closeMysqlCur()
+
+    def writeSignupCaptcha(self):
+        self.openMysqlCur()
+        stmt_insert = "INSERT INTO `user`( `user`, `captcha`, `signupTime`) VALUES('%s', '%s')" % (self.msg["user"], self.captcha, self.getLocalTime())
+        self.cur.execute(stmt_insert)
+        self.closeMysqlCur()
+
+    def getSignupSMS(self):
+        # TODO
+        self.SMS = "【penpen】尊敬的用户，您的注册码是" + self.captcha + "，注册码有效时间10分钟，请尽快使用。"
+        return self.SMS
+
+    def getCaptcha(self):
+        # TODO
+        self.captcha = "1234"
+        return self.captcha
 
     def checkPassword(self):
         try:
@@ -270,7 +362,10 @@ class handleMessage(object):
 
     def getLocalTime(self):
         # America time
-        self.time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time() + 3600 * 12))
+        # self.time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time() + 3600 * 12))
+        # China time
+        self.time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
+        return self.time
         # seconds since 1970
         # self.time = int(time.time())
 
@@ -279,26 +374,26 @@ class handleMessage(object):
     #     self.push = _jpush.create_push()
 
     def loginSuccess(self):
-        self.msg = '{"state":11}'
+        self.msg = '{"status":11}'
         self.sendMsg()
         time.sleep(2)
         self.readMsg()
 
     def loginFailed(self):
-        self.msg = '{"state":12}'
+        self.msg = '{"status":12}'
         self.sendMsg()
 
     def syncAllMessages(self):
         # TODO
         self.getMsg()
         self.openMysqlCur()
-        stmt_select = "SELECT `from`, `to`, `time`, `type`, `content` FROM `%s` WHERE `to`=%s OR `from`=%s ORDER BY id" % (self.msg["user"],self.msg["target"],self.msg["target"])
+        stmt_select = "SELECT `from`, `to`, `time`, `type`, `content` FROM `%s` WHERE `to`=%s OR `from`=%s ORDER BY id" % (self.msg["user"], self.msg["target"], self.msg["target"])
         self.cur.execute(stmt_select)
         self.msg = []
         for row in self.cur.fetchall():
             self.msg.append('{"from":"%s","to":"%s","time":"%s","type":%d,"content":"%s"}' % (row[0], row[1], row[2], row[3], row[4]))
         self.closeMysqlCur()
-        self.msg = str({"messages":self.msg})
+        self.msg = str({"messages": self.msg})
         self.sendMsg()
 
     def syncAllContacts(self):
@@ -307,7 +402,7 @@ class handleMessage(object):
         self.getJobs()
         self.getAllContacts()
         self.closeMysqlCur()
-        self.msg = str({"departments": self.dictDep, "jobs": self.dictJob, "contacts": self.arrayCon})
+        self.msg = str({"departments": self.dictDep, "jobs": self.dictJob, "contacts": self.arrayContacts})
         # For test
         # print(self.msg)
         self.sendMsg()
@@ -331,6 +426,7 @@ class handleMessage(object):
         self.dictDep = {}
         for row in self.cur.fetchall():
             self.dictDep[row[0]] = row[1]
+        return self.dictDep
 
     def getJobs(self):
         stmt_select = "SELECT `id`, `name` FROM `job` ORDER BY id"
@@ -338,18 +434,20 @@ class handleMessage(object):
         self.dictJob = {}
         for row in self.cur.fetchall():
             self.dictJob[row[0]] = row[1]
+        return self.dictJob
 
     def getAllContacts(self):
         stmt_select = "SELECT `id`, `name`, `user`, `department`, `job`, `signing` FROM `user` ORDER BY id"
         self.cur.execute(stmt_select)
-        self.arrayCon = []
+        self.arrayContacts = []
         for row in self.cur.fetchall():
-            self.arrayCon.append({"name": row[1], "user": row[2], "department": row[3], "job": row[4], "signing": row[5]})
+            self.arrayContacts.append({"name": row[1], "user": row[2], "department": row[3], "job": row[4], "signing": row[5]})
+        return self.arrayContacts
 
-    def updateState(self):
+    def updateStatus(self):
         self.getMsg()
         self.openMysqlCur()
-        stmt_update = "UPDATE user SET state=%d WHERE user=%s" % (self.msg["state"], self.msg["user"])
+        stmt_update = "UPDATE user SET status=%d WHERE user=%s" % (self.msg["status"], self.msg["user"])
         self.cur.execute(stmt_update)
         self.closeMysqlCur()
 
@@ -369,7 +467,7 @@ class handleMessage(object):
         self.cur.execute(stmt_select)
         self.groupGID = self.cur.fetchone()[0]
         self.closeMysqlCur()
-        # TODO 给member通知
+        # TODO member alert
         # get group members array by gid
         self.groupMembers = self.msg["member"].split(',')
         self.group = self.msg
@@ -398,4 +496,4 @@ class handleMessage(object):
 
 
 if __name__ == '__main__':
-    a = handleMessage(53888)
+    a = handleMessage(7)
