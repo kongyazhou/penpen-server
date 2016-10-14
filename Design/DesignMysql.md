@@ -46,16 +46,18 @@ unread	是否读过(0:读过，1:未读)(tinyint)
 ````
 
 ```
-id			id(主键)
+id			id(主键，自增)
 name		姓名(base64)
 user		用户ID(即手机号)
 password	登录密码(md5)
 department	部门编号
 job			职位编号
 online		在线PID(在线：PID，不在线：0)
-state		状态(0:离线,1:在线,2:pause)
+status		状态(0:离线,1:在线,2:pause)
 icon		头像(文件名，base64)
 signing		个性签名(base64)
+signupTime	注册时间
+captcha		验证码
 equipment	设备(*)
 ```
 
