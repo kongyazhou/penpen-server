@@ -39,7 +39,7 @@ penpen是一个企业级IM应用，是一个为企业客户提供文本、语音
 33888	更新活跃状态
 
 30666	注册账号验证码
-32666	修改密码验证码
+32666	忘记密码验证码
 
 50888	同步所有消息	
 51888	同步所有联系人
@@ -66,7 +66,9 @@ penpen是一个企业级IM应用，是一个为企业客户提供文本、语音
 ```
 该服务以非常长的格式加密字符串。可在下列其中一项之间进行加密： ASCII、二进制、十六进制、反向、BASE64、DES、l33t、MD5、ROT-13、Url 编码字符串、UU 编码字符串。 每个加密类型都可以视为一个单独的方法，确保所需功能的正确输出。 在有些情况下（如适用），该工具可提供加密-解密方法。在其他地方（例如使用 MD5 和 DES 时） 加密方法只适用于单向。
 
-单向：3个著名加密算法(MD5、RSA、DES)
+单向：MD5、SHA1
+
+openssl、DES、AES、MD5、SHA1、RSA、DSA、RC4
 ```
 
 ## 编码方式
@@ -83,9 +85,9 @@ penpen是一个企业级IM应用，是一个为企业客户提供文本、语音
 
 ```json
 {
-	"head":1110,//编码代号
-	"body":"asasfaf",//base64加密
-	"tail":"PENPEN 1.0"//PENPEN协议版本号
+	"head":'加密代号;int;1110',
+	"body":'包;base64;"asasfaf"',
+	"tail":"协议版本;str;PENPEN 1.0"
 }
 ```
 
@@ -98,10 +100,10 @@ penpen是一个企业级IM应用，是一个为企业客户提供文本、语音
 
 ```json
 {
-	"from":"15228977313",
-	"to":"1231241243",//对方账号，或群号
-	"type":0,//0:文字，1:图片，2:语音，10：群文字，11：群图片，12：群语音，19：创建讨论组通知
-	"content":"约吗"//base64
+	"from":"发送者账号;str;15228977313",
+	"to":"账号或群号;str;1231241243",
+	"type":'消息类型;int;0:文字，1:图片,2:语音,10：群文字,11：群图片,12：群语音,19：创建讨论组通知'
+	"content":"消息内容;base64;约吗"
 }
 ```
 
@@ -195,7 +197,7 @@ state改为status
 {
 	"holder":"创建者ID;str;12345678903",
 	"name":"讨论组名;base64;ASD13r4",
-	"member":"所有成员账号(包括创建者);str;12345678900,12345678909,12345678903"
+	"member":'所有成员账号(包括创建者);str;12345678900,"12345678909,12345678903"'
 }
 ```
 
@@ -206,11 +208,11 @@ state改为status
 	"from": "0",
     "to": "gid",
     "type": 19,
-    "content": {
-        "holder": self.group["holder"],
-        "name": self.group["name"],
-        "member": self.group["member"]
-	}(base64)
+    "content": '创建讨论组通知;base64;{
+        "holder": 创建者;str;self.group["holder"],
+        "name": 讨论组名;str;self.group["name"],
+        "member": 讨论组成员;str;self.group["member"]
+	}'
 
 }
 ```
@@ -228,8 +230,8 @@ state改为status
 
 ```json
 {
-	"messages":"所有消息;str;[{"from":"%s","to":"%s","time":"%s","type":%d,"content":"%s"},
-		{}, ... ,{}]"
+	"messages":'所有消息;str;[{"from":"%s","to":"%s","time":"%s","type":%d,"content":"%s"},
+		{}, ... ,{}]'
 }
 ```
 
@@ -241,7 +243,7 @@ state改为status
 	"name":"姓名;base64",
 	"password":"密码;md5",
 	"captcha":"验证码;int",
-	"time":"注册时间;str;y-m-d h-m-s"
+	"time":"注册时间;str;y-m-d h:m:s"
 }
 ```
 
@@ -251,7 +253,7 @@ state改为status
 {
 	"user":"账号;str;手机号",
 	"status":"注册状态;int;0:成功,1:账号已存在,2:验证码错误,3:验证码超时",
-	"time":"注册时间;str;y-m-d h-m-s"
+	"time":"注册时间;str;y-m-d h:m:s"
 }
 ```
 
@@ -260,7 +262,7 @@ state改为status
 ```json
 {
 	"user":"注册账号;str;手机号",
-	"time":"时间;str;y-m-d h-m-s"
+	"time":"时间;str;y-m-d h:m:s"
 }
 ```
 
@@ -270,6 +272,7 @@ state改为status
 {
 	"user":"注册账号;str;手机号",
 	"status":"验证码状态;int;0:成功,1:失败",
-	"time":"时间;str;y-m-d h-m-s"
+	"time":"时间;str;y-m-d h:m:s"
 }
 ```
+
