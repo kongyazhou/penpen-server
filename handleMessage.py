@@ -5,6 +5,7 @@ import mysql.connector
 import json
 import os
 import base64
+import random
 import time
 import signal
 import sms253
@@ -53,6 +54,10 @@ class handleMessage(object):
             self.sendSMS()
         elif self.type == 7:
             self.checkSignupUser()
+        elif self.type == 8:
+            self.createUser()
+        elif self.type == 9:
+            self.getAllContacts()
         elif self.type == 20888:
             self.login()
         elif self.type == 21888:
@@ -274,6 +279,9 @@ class handleMessage(object):
             self.openMysqlCur()
             stmt_update = "UPDATE user SET name='%s', password='%s' WHERE user=%s" % (self.msg["name"], self.msg["password"], self.user)
             self.cur.execute(stmt_update)
+            stmt_create = "CREATE TABLE `%s` (`id` INT NOT NULL AUTO_INCREMENT key, `from` bigint, `to` bigint, `time` DATETIME, `type` tinyint, `content` mediumtext, `unread` tinyint);" % (self.user)
+            self.cur.execute(stmt_create)
+            self.closeMysqlCur()
         else:
             pass
         self.msg = {"user": self.msg["user"], "status": self.status, "time": self.getLocalTime()}
@@ -305,7 +313,8 @@ class handleMessage(object):
             # TODO
             self.SMS = "您的账号已存在，若遗忘密码，请在点击忘记密码操作。"
             pass
-        self.msg = {"user": self.user, "status": self.status, "SMS": self.SMS, "time": self.getLocalTime()}
+        # self.msg = {"user": self.user, "status": self.status, "SMS": self.SMS, "time": self.getLocalTime()}
+        self.msg = {"user": self.user, "status": self.status, "time": self.getLocalTime()}
         self.sendMsg()
 
     def checkSignupUser(self):
@@ -325,18 +334,16 @@ class handleMessage(object):
 
     def writeSignupCaptcha(self):
         self.openMysqlCur()
-        stmt_insert = "INSERT INTO `user`( `user`, `captcha`, `signupTime`) VALUES('%s', '%s')" % (self.msg["user"], self.captcha, self.getLocalTime())
+        stmt_insert = "INSERT INTO `user`( `user`, `captcha`, `signupTime`) VALUES('%s', '%s', '%s')" % (self.msg["user"], self.captcha, self.getLocalTime())
         self.cur.execute(stmt_insert)
         self.closeMysqlCur()
 
     def getSignupSMS(self):
-        # TODO
         self.SMS = "【penpen】尊敬的用户，您的注册码是" + self.captcha + "，注册码有效时间10分钟，请尽快使用。"
         return self.SMS
 
     def getCaptcha(self):
-        # TODO
-        self.captcha = "1234"
+        self.captcha = int(random.uniform(1000, 9999))
         return self.captcha
 
     def checkPassword(self):
@@ -438,6 +445,8 @@ class handleMessage(object):
 
     def getAllContacts(self):
         stmt_select = "SELECT `id`, `name`, `user`, `department`, `job`, `signing` FROM `user` ORDER BY id"
+        # self.openMysqlCur()
+        # stmt_select = "SELECT `id`, `name`, `user`, `department`, `job`, `signing` FROM `user` WHERE `name`<>'6YOR5oC7' ORDER BY id"
         self.cur.execute(stmt_select)
         self.arrayContacts = []
         for row in self.cur.fetchall():
@@ -496,4 +505,5 @@ class handleMessage(object):
 
 
 if __name__ == '__main__':
-    a = handleMessage(7)
+    a = handleMessage(9)
+    print(a.arrayContacts)
