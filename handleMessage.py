@@ -279,7 +279,7 @@ class handleMessage(object):
             self.openMysqlCur()
             stmt_update = "UPDATE user SET name='%s', password='%s' WHERE user=%s" % (self.msg["name"], self.msg["password"], self.user)
             self.cur.execute(stmt_update)
-            stmt_create = "CREATE TABLE `%s` (`id` INT NOT NULL AUTO_INCREMENT key, `from` bigint, `to` bigint, `time` DATETIME, `type` tinyint, `content` mediumtext, `unread` tinyint);" % (self.user)
+            stmt_create = "CREATE TABLE `%s` (`id` INT NOT NULL AUTO_INCREMENT key, `from` bigint, `to` bigint, `time` DATETIME, `type` tinyint, `content` mediumtext, `unread` tinyint)  ENGINE = MYISAM;" % (self.user)
             self.cur.execute(stmt_create)
             self.closeMysqlCur()
         else:
@@ -308,7 +308,7 @@ class handleMessage(object):
             self.getCaptcha()
             self.writeSignupCaptcha()
             self.getSignupSMS()
-            # self.sendSMS()
+            self.sendSMS()
         else:
             # TODO
             self.SMS = "您的账号已存在，若遗忘密码，请在点击忘记密码操作。"
@@ -318,6 +318,7 @@ class handleMessage(object):
         self.sendMsg()
 
     def checkSignupUser(self):
+        # TODO
         self.openMysqlCur()
         stmt_select = "SELECT password FROM user WHERE user=%s" % (self.user)
         self.cur.execute(stmt_select)
@@ -339,11 +340,12 @@ class handleMessage(object):
         self.closeMysqlCur()
 
     def getSignupSMS(self):
-        self.SMS = "【penpen】尊敬的用户，您的注册码是" + self.captcha + "，注册码有效时间10分钟，请尽快使用。"
+        self.SMS = "【penpen】尊敬的用户，您的注册码是" + str(self.captcha) + "，注册码有效时间10分钟，请尽快使用。"
         return self.SMS
 
     def getCaptcha(self):
         self.captcha = int(random.uniform(1000, 9999))
+        # self.captcha = 1234
         return self.captcha
 
     def checkPassword(self):
@@ -505,5 +507,5 @@ class handleMessage(object):
 
 
 if __name__ == '__main__':
-    a = handleMessage(9)
-    print(a.arrayContacts)
+    a = handleMessage(30666)
+    # print(a.arrayContacts)
