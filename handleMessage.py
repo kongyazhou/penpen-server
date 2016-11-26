@@ -446,7 +446,7 @@ class handleMessage(object):
         return self.dictJob
 
     def getAllContacts(self):
-        stmt_select = "SELECT `id`, `name`, `user`, `department`, `job`, `signing` FROM `user` ORDER BY id"
+        stmt_select = "SELECT `id`, `name`, `user`, `department`, `job`, `signing` FROM `user` WHERE `name`!=-1 ORDER BY id"
         # self.openMysqlCur()
         # stmt_select = "SELECT `id`, `name`, `user`, `department`, `job`, `signing` FROM `user` WHERE `name`<>'6YOR5oC7' ORDER BY id"
         self.cur.execute(stmt_select)
